@@ -243,7 +243,7 @@ class TimelineEngine:
             print(f"Warning: Timeline '{name}' already exists")
             return False
         
-        timeline = Timeline(name=name, fps=fps, bpm=bmp, duration_ms=duration_ms)
+        timeline = Timeline(name=name, fps=fps, bpm=bpm, duration_ms=duration_ms)
         self.timelines[name] = timeline
         
         # Set as active if it's the first timeline
@@ -253,7 +253,7 @@ class TimelineEngine:
         print(f"Created timeline '{name}' - Duration: {duration_ms}ms")
         if fps:
             print(f"  Timebase: {fps} FPS")
-        elif bmp:
+        elif bpm:
             print(f"  Timebase: {bpm} BPM")
         
         return True

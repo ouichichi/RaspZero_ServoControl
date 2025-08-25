@@ -3,89 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Raspberry Pi Servo Controller</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <title>Servo Control Studio</title>
+    <link rel="stylesheet" href="/static/css/enhanced_style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1>🎛️ Raspberry Pi Servo Controller</h1>
-            <div class="status-panel">
-                <div class="status-indicator" id="connectionStatus"></div>
-                <span id="statusText">Connecting...</span>
-                <button class="btn btn-emergency" id="emergencyBtn">🛑 Emergency Stop</button>
+    <div class="app-container">
+        <!-- Top Navigation Bar -->
+        <nav class="top-nav">
+            <div class="nav-left">
+                <h1><i class="fas fa-robot"></i> Servo Control Studio</h1>
+                <div class="connection-status" id="connection-status">
+                    <i class="fas fa-circle"></i>
+                    <span>Disconnected</span>
+                </div>
             </div>
-        </header>
+            <div class="nav-right">
+                <button class="btn btn-danger" id="emergency-stop">
+                    <i class="fas fa-stop"></i> Emergency Stop
+                </button>
+                <button class="btn btn-secondary" id="save-config">
+                    <i class="fas fa-save"></i> Save Config
+                </button>
+                <button class="btn btn-secondary" id="load-config">
+                    <i class="fas fa-upload"></i> Load Config
+                </button>
+            </div>
+        </nav>
 
-        <div class="controls-grid">
-            <div class="card">
-                <h2>📊 System Status</h2>
-                <div class="status-info">
-                    <div class="info-item">
-                        <span class="label">Connected Servos:</span>
-                        <span id="activeServos">0/16</span>
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Left Sidebar - System Controls -->
+            <div class="sidebar left-sidebar">
+                <div class="panel" id="safety-panel">
+                    <div class="panel-header" onclick="togglePanel('safety-panel')">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Safety System</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
                     </div>
-                    <div class="info-item">
-                        <span class="label">System Status:</span>
-                        <span id="systemStatus" class="status-ok">Normal</span>
+                    <div class="panel-content">
+                        <div class="safety-status" id="safety-status">
+                            <div class="status-item">
+                                <span>State:</span>
+                                <span class="status-value" id="safety-state">Normal</span>
+                            </div>
+                            <div class="status-item">
+                                <span>Watchdog:</span>
+                                <span class="status-value" id="watchdog-status">Active</span>
+                            </div>
+                        </div>
+                        <div class="safety-controls">
+                            <button class="btn btn-warning full-width" id="safe-pose">
+                                <i class="fas fa-home"></i> Go to Safe Pose
+                            </button>
+                            <button class="btn btn-info full-width" id="preflight-check">
+                                <i class="fas fa-clipboard-check"></i> Preflight Check
+                            </button>
+                        </div>
                     </div>
-                    <div class="info-item">
-                        <span class="label">Last Update:</span>
-                        <span id="lastUpdate">--:--:--</span>
+                </div>
+
+                <div class="panel" id="presets-panel">
+                    <div class="panel-header" onclick="togglePanel('presets-panel')">
+                        <i class="fas fa-magic"></i>
+                        <span>Motion Presets</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="panel-content">
+                        <div class="preset-grid" id="preset-grid">
+                            <!-- Presets will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" id="timeline-panel">
+                    <div class="panel-header" onclick="togglePanel('timeline-panel')">
+                        <i class="fas fa-film"></i>
+                        <span>Timeline Control</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="panel-content">
+                        <div class="transport-controls">
+                            <button class="btn btn-success transport-btn" id="play-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="btn btn-warning transport-btn" id="pause-btn">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button class="btn btn-secondary transport-btn" id="stop-btn">
+                                <i class="fas fa-stop"></i>
+                            </button>
+                            <button class="btn btn-info transport-btn" id="record-btn">
+                                <i class="fas fa-circle"></i>
+                            </button>
+                        </div>
+                        <div class="timeline-info">
+                            <div class="time-display" id="time-display">00:00:00</div>
+                            <div class="timeline-status" id="timeline-status">Stopped</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card">
-                <h2>⚙️ Global Controls</h2>
-                <div class="global-controls">
-                    <button class="btn btn-primary" id="resetAllBtn">🔄 Reset All to 90°</button>
-                    <button class="btn btn-secondary" id="enableAllBtn">✅ Enable All</button>
-                    <button class="btn btn-secondary" id="disableAllBtn">❌ Disable All</button>
+            <!-- Central Content Area -->
+            <div class="content-area">
+                <!-- Servo Configuration Panel -->
+                <div class="panel" id="servo-config-panel">
+                    <div class="panel-header" onclick="togglePanel('servo-config-panel')">
+                        <i class="fas fa-cog"></i>
+                        <span>Servo Configuration</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                        <div class="panel-actions">
+                            <button class="btn btn-small btn-primary" id="add-servo">
+                                <i class="fas fa-plus"></i> Add Servo
+                            </button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="servo-controls" id="servo-controls">
+                            <!-- Servo controls will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visual Timeline -->
+                <div class="panel timeline-visual" id="timeline-visual-panel">
+                    <div class="panel-header" onclick="togglePanel('timeline-visual-panel')">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Visual Timeline</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="panel-content">
+                        <div class="timeline-container">
+                            <canvas id="timeline-canvas"></canvas>
+                        </div>
+                        <div class="timeline-controls">
+                            <input type="range" id="timeline-scrubber" min="0" max="10000" value="0" class="scrubber">
+                            <div class="timeline-markers" id="timeline-markers"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="servo-grid" id="servoGrid">
-            <!-- Servo controls will be generated here -->
-        </div>
+            <!-- Right Sidebar - Servo Visualization -->
+            <div class="sidebar right-sidebar">
+                <div class="panel" id="servo-viz-panel">
+                    <div class="panel-header" onclick="togglePanel('servo-viz-panel')">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Servo Visualization</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="panel-content">
+                        <div class="servo-meters" id="servo-meters">
+                            <!-- Servo angle meters will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
 
-        <div class="card log-card">
-            <h2>📝 Activity Log</h2>
-            <div class="log-area" id="logArea"></div>
-            <button class="btn btn-secondary" onclick="clearLog()">🗑️ Clear Log</button>
+                <div class="panel" id="system-status-panel">
+                    <div class="panel-header" onclick="togglePanel('system-status-panel')">
+                        <i class="fas fa-info-circle"></i>
+                        <span>System Status</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="panel-content">
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <span class="status-label">Active Servos:</span>
+                                <span class="status-value" id="active-servo-count">0</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Running Presets:</span>
+                                <span class="status-value" id="running-preset-count">0</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Timeline State:</span>
+                                <span class="status-value" id="timeline-state">Stopped</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">System Time:</span>
+                                <span class="status-value" id="system-time">--:--:--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Servo Configuration Modal -->
-    <div class="modal" id="configModal">
+    <!-- Modal Dialogs -->
+    <div class="modal" id="add-servo-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Configure Servo <span id="configServoChannel">0</span></h3>
-                <button class="close-btn" onclick="closeConfigModal()">&times;</button>
+                <h3><i class="fas fa-plus"></i> Add New Servo</h3>
+                <button class="modal-close" onclick="closeModal('add-servo-modal')">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="input-group">
-                    <label for="servoName">Servo Name:</label>
-                    <input type="text" id="servoName" placeholder="e.g., Base Rotation">
+                <div class="form-group">
+                    <label for="servo-id">Servo ID:</label>
+                    <input type="text" id="servo-id" placeholder="e.g., left_eye, head_tilt">
                 </div>
-                <div class="input-group">
-                    <label for="minPulse">Min Pulse (μs):</label>
-                    <input type="number" id="minPulse" min="500" max="1500" value="750">
+                <div class="form-group">
+                    <label for="servo-channel">Channel:</label>
+                    <select id="servo-channel">
+                        <!-- Populated dynamically with available channels -->
+                    </select>
                 </div>
-                <div class="input-group">
-                    <label for="maxPulse">Max Pulse (μs):</label>
-                    <input type="number" id="maxPulse" min="1500" max="3000" value="2250">
+                <div class="form-group">
+                    <label for="servo-pin">Pin (optional):</label>
+                    <input type="number" id="servo-pin" placeholder="Physical pin number">
                 </div>
-                <div class="modal-actions">
-                    <button class="btn btn-primary" onclick="saveServoConfig()">💾 Save</button>
-                    <button class="btn btn-secondary" onclick="closeConfigModal()">❌ Cancel</button>
+                <div class="form-group">
+                    <label for="servo-orientation">Orientation:</label>
+                    <select id="servo-orientation">
+                        <option value="normal">Normal</option>
+                        <option value="inverted">Inverted</option>
+                        <option value="mirrored">Mirrored</option>
+                    </select>
                 </div>
+                <div class="form-group">
+                    <label for="servo-notes">Notes:</label>
+                    <textarea id="servo-notes" placeholder="Description, mounting notes, etc."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('add-servo-modal')">Cancel</button>
+                <button class="btn btn-primary" id="confirm-add-servo">Add Servo</button>
             </div>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <!-- Configuration Save/Load Modal -->
+    <div class="modal" id="config-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="config-modal-title"><i class="fas fa-cog"></i> Configuration</h3>
+                <button class="modal-close" onclick="closeModal('config-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="config-list" id="config-list">
+                    <!-- Configuration list will be populated dynamically -->
+                </div>
+                <div class="form-group">
+                    <label for="config-name">Configuration Name:</label>
+                    <input type="text" id="config-name" placeholder="My Servo Setup">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('config-modal')">Cancel</button>
+                <button class="btn btn-primary" id="confirm-config-action">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="/static/js/enhanced_app.js"></script>
 </body>
 </html>
