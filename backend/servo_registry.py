@@ -34,7 +34,7 @@ class ServoMetadata:
     # Runtime state
     current_angle: float = 90.0
     target_angle: float = 90.0
-    enabled: bool = False
+    enabled: bool = True  # Enable servos by default
     last_move_time: float = 0.0
     
     # Aliases for human-friendly naming

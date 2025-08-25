@@ -23,8 +23,8 @@ safety_system = SafetySystem(servo_controller, servo_registry)
 preset_engine = PresetEngine(servo_controller, servo_registry)
 timeline_engine = TimelineEngine(servo_controller, servo_registry)
 
-# Start safety watchdog
-safety_system.watchdog_start(timeout_ms=10000)  # 10 second timeout
+# Start safety watchdog with longer timeout for testing
+safety_system.watchdog_start(timeout_ms=30000)  # 30 second timeout
 
 print("All systems initialized successfully!")
 print("Access the web interface at: http://localhost:5000")
@@ -336,7 +336,7 @@ def send_status_updates():
         except Exception as e:
             print(f"Status update error: {e}")
         
-        time.sleep(2.0)  # Update every 2 seconds
+        time.sleep(5.0)  # Update every 5 seconds - reduced for stability
 
 
 # Start status update thread
