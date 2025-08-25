@@ -1,0 +1,9 @@
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+adafruit-circuitpython-pca9685==3.4.8
+adafruit-circuitpython-motor==3.4.8
+adafruit-circuitpython-busdevice==5.2.6
+adafruit-blinka==8.22.2
+RPi.GPIO==0.7.1
+python-socketio==5.9.0
+eventlet==0.33.3

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raspberry Pi Servo Controller</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎛️ Raspberry Pi Servo Controller</h1>
+            <div class="status-panel">
+                <div class="status-indicator" id="connectionStatus"></div>
+                <span id="statusText">Connecting...</span>
+                <button class="btn btn-emergency" id="emergencyBtn">🛑 Emergency Stop</button>
+            </div>
+        </header>
+
+        <div class="controls-grid">
+            <div class="card">
+                <h2>📊 System Status</h2>
+                <div class="status-info">
+                    <div class="info-item">
+                        <span class="label">Connected Servos:</span>
+                        <span id="activeServos">0/16</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">System Status:</span>
+                        <span id="systemStatus" class="status-ok">Normal</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Last Update:</span>
+                        <span id="lastUpdate">--:--:--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>⚙️ Global Controls</h2>
+                <div class="global-controls">
+                    <button class="btn btn-primary" id="resetAllBtn">🔄 Reset All to 90°</button>
+                    <button class="btn btn-secondary" id="enableAllBtn">✅ Enable All</button>
+                    <button class="btn btn-secondary" id="disableAllBtn">❌ Disable All</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="servo-grid" id="servoGrid">
+            <!-- Servo controls will be generated here -->
+        </div>
+
+        <div class="card log-card">
+            <h2>📝 Activity Log</h2>
+            <div class="log-area" id="logArea"></div>
+            <button class="btn btn-secondary" onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+    </div>
+
+    <!-- Servo Configuration Modal -->
+    <div class="modal" id="configModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Configure Servo <span id="configServoChannel">0</span></h3>
+                <button class="close-btn" onclick="closeConfigModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="servoName">Servo Name:</label>
+                    <input type="text" id="servoName" placeholder="e.g., Base Rotation">
+                </div>
+                <div class="input-group">
+                    <label for="minPulse">Min Pulse (μs):</label>
+                    <input type="number" id="minPulse" min="500" max="1500" value="750">
+                </div>
+                <div class="input-group">
+                    <label for="maxPulse">Max Pulse (μs):</label>
+                    <input type="number" id="maxPulse" min="1500" max="3000" value="2250">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" onclick="saveServoConfig()">💾 Save</button>
+                    <button class="btn btn-secondary" onclick="closeConfigModal()">❌ Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
